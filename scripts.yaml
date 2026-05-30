@@ -1,0 +1,68 @@
+script:
+  select_source:
+    alias: Select Source
+    mode: restart
+    fields:
+      source:
+        description: Source name to activate
+        example: "Apple TV"
+    sequence:
+      - service: input_boolean.turn_on
+          target:
+            entity_id:
+              - input_boolean.tv_power
+              - input_boolean.avr_power
+      - service: input_select.select_option
+        target:
+          entity_id: input_select.active_source
+        data:
+          option: "{{ source }}"
+
+  power_toggle_all:
+    alias: Toggle All Power
+    sequence:
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: input_boolean.tv_power
+                state: 'on'
+            sequence:
+              - service: input_boolean.turn_off
+                target:
+                  entity_id:
+                    - input_boolean.tv_power
+                    - input_boolean.avr_power
+              - service: input_select.select_option
+                target:
+                  entity_id: input_select.active_source
+                data:
+                  option: "None"
+        default:
+          - service: input_boolean.turn_on
+            target:
+              entity_id:
+                - input_boolean.tv_power
+                - input_boolean.avr_power
+
+  volume_up:
+    alias: Volume Up
+    sequence:
+      - service: input_number.increment
+        target:
+          entity_id: input_number.avr_volume
+
+  volume_down:
+    alias: Volume Down
+    sequence:
+      - service: input_number.decrement
+        target:
+          entity_id: input_number.avr_volume
+
+  volume_mute:
+    alias: Toggle Mute
+    sequence:
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.avr_volume
+        data:
+          value: 0
