@@ -1,0 +1,10 @@
+automation:
+  - alias: "Remote - Update device states on source change"
+    trigger:
+      - platform: state
+        entity_id: input_select.active_source
+    action:
+      - service: logbook.log
+        data:
+          name: "Universal Remote"
+          message: "Source changed to {{ states('input_select.active_source') }}"
