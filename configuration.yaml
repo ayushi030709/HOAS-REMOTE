@@ -1,0 +1,142 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+input_select:
+  active_source:
+    name: Active Source
+    options:
+      - "None"
+      - "Apple TV"
+      - "PlayStation 5"
+      - "Nintendo Switch"
+      - "Chromecast"
+    initial: "None"
+    icon: mdi:television-play
+
+input_boolean:
+  tv_power:
+    name: TV Power
+    icon: mdi:television
+
+  avr_power:
+    name: AVR Power
+    icon: mdi:surround-sound
+
+input_number:
+  avr_volume:
+    name: AVR Volume
+    min: 0
+    max: 100
+    step: 5
+    initial: 30
+    unit_of_measurement: "%"
+    icon: mdi:volume-high
+
+# ── Template sensors (supported on all HA versions) ──────────────
+template:
+  - sensor:
+      - name: "Remote Status"
+        unique_id: remote_status
+        state: >
+          {% if is_state('input_boolean.tv_power', 'off') %}
+            Standby
+          {% elif states('input_select.active_source') == 'None' %}
+            TV On — No Source
+          {% else %}
+            {{ states('input_select.active_source') }}
+          {% endif %}
+        icon: mdi:remote-tv
+
+# ── Universal media players (works on all HA versions) ───────────
+media_player:
+  - platform: universal
+    name: Living Room TV
+    unique_id: living_room_tv
+    state_template: >
+      {% if is_state('input_boolean.tv_power', 'on') %}
+        {% if states('input_select.active_source') != 'None' %}on{% else %}idle{% endif %}
+      {% else %}off{% endif %}
+    attributes:
+      source: input_select.active_source
+      source_list: input_select.active_source
+      volume_level: input_number.avr_volume
+    commands:
+      turn_on:
+        service: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.tv_power
+      turn_off:
+        service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.tv_power
+
+  - platform: universal
+    name: AVR Receiver
+    unique_id: avr_receiver
+    state_template: >
+      {% if is_state('input_boolean.avr_power', 'on') %}on{% else %}off{% endif %}
+    commands:
+      turn_on:
+        service: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.avr_power
+      turn_off:
+        service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.avr_power
+
+  - platform: universal
+    name: Apple TV
+    unique_id: source_appletv
+    state_template: >
+      {% if is_state('input_select.active_source', 'Apple TV') and
+            is_state('input_boolean.tv_power', 'on') %}playing{% else %}standby{% endif %}
+    commands:
+      turn_on:
+        service: script.select_source
+        data:
+          source: "Apple TV"
+
+  - platform: universal
+    name: PlayStation 5
+    unique_id: source_ps5
+    state_template: >
+      {% if is_state('input_select.active_source', 'PlayStation 5') and
+            is_state('input_boolean.tv_power', 'on') %}playing{% else %}standby{% endif %}
+    commands:
+      turn_on:
+        service: script.select_source
+        data:
+          source: "PlayStation 5"
+
+  - platform: universal
+    name: Nintendo Switch
+    unique_id: source_switch
+    state_template: >
+      {% if is_state('input_select.active_source', 'Nintendo Switch') and
+            is_state('input_boolean.tv_power', 'on') %}playing{% else %}standby{% endif %}
+    commands:
+      turn_on:
+        service: script.select_source
+        data:
+          source: "Nintendo Switch"
+
+  - platform: universal
+    name: Chromecast
+    unique_id: source_chromecast
+    state_template: >
+      {% if is_state('input_select.active_source', 'Chromecast') and
+            is_state('input_boolean.tv_power', 'on') %}playing{% else %}standby{% endif %}
+    commands:
+      turn_on:
+        service: script.select_source
+        data:
+          source: "Chromecast"
